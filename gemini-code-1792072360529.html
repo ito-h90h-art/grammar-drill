@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>中学口語文法ドリル（やみつき版）</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bunsetsu-color: #e11d48;
+      --bunsetsu-bg: #ffe4e6;
+      --tango-color: #0284c7;
+      --tango-bg: #e0f2fe;
+      --pos-color: #7c3aed;
+      --pos-bg: #f3e8ff;
+      --correct-color: #16a34a;
+      --correct-bg: #dcfce7;
+      --missed-color: #ea580c;
+      --missed-bg: #ffedd5;
+      --extra-color: #9333ea;
+      --extra-bg: #f3e8ff;
+      --card: rgba(255, 255, 255, 0.96);
+      --text: #1e293b;
+      --text-sub: #475569;
+      --border: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0; padding: 0;
+      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "BIZ UDPGothic", Meiryo, sans-serif;
+      color: var(--text);
+      line-height: 1.4;
+      min-height: 100vh;
+      transition: background 0.6s ease;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ==========================================================
+       画面全体の5段階テーマ（青 ➔ 黄 ➔ 赤 ➔ 金 ➔ 虹）
+    ========================================================== */
+    body.stage-blue {
+      background: radial-gradient(circle at 50% 20%, #dbeafe 0%, #93c5fd 45%, #1e3a8a 100%);
+    }
+    body.stage-yellow {
+      background:
+        repeating-conic-gradient(from 0deg at 50% 30%, rgba(255, 255, 255, 0.22) 0deg 8deg, transparent 8deg 16deg),
+        radial-gradient(circle at 50% 30%, #fef9c3 0%, #fde047 35%, #eab308 70%, #ca8a04 100%);
+    }
+    body.stage-red {
+      background:
+        repeating-conic-gradient(from 0deg at 50% 30%, rgba(254, 240, 138, 0.2) 0deg 6deg, transparent 6deg 12deg),
+        radial-gradient(circle at 50% 30%, #fef08a 0%, #f97316 30%, #dc2626 65%, #7f1d1d 100%);
+    }
+    body.stage-gold {
+      background:
+        repeating-conic-gradient(from 0deg at 50% 30%, rgba(255, 255, 255, 0.35) 0deg 5deg, rgba(245, 158, 11, 0.1) 5deg 10deg),
+        radial-gradient(circle at 50% 30%, #ffffff 0%, #fde047 25%, #f59e0b 55%, #b45309 85%, #451a03 100%);
+    }
+    body.stage-rainbow {
+      background:
+        repeating-conic-gradient(from 0deg at 50% 40%, rgba(255, 255, 255, 0.38) 0deg 4deg, transparent 4deg 8deg),
+        conic-gradient(from 0deg at 50% 40%, #ff0055, #ff7700, #ffee00, #00ff66, #00ccff, #aa00ff, #ff00cc, #ff0055);
+      background-size: 100% 100%;
+      animation: rainbowShift 4s linear infinite;
+    }
+
+    @keyframes rainbowShift {
+      0% { filter: hue-rotate(0deg) saturate(1.3); }
+      100% { filter: hue-rotate(360deg) saturate(1.3); }
+    }
+
+    /* スリムヘッダー */
+    header {
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 14px;
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    .app-title {
+      font-size: 0.95rem; font-weight: 900;
+      display: flex; align-items: center; gap: 6px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* モード切替タブ */
+    .mode-selector {
+      display: flex; gap: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 3px; border-radius: 8px;
+    }
+    .mode-tab {
+      border: none; background: transparent; padding: 4px 10px; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 800; color: rgba(255,255,255,0.85); cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .mode-tab.active {
+      background: #ffffff; color: var(--text);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .mode-tab.active[data-mode="step"] { color: var(--primary); }
+    .mode-tab.active[data-mode="bunsetsu"] { color: var(--bunsetsu-color); }
+    .mode-tab.active[data-mode="tango"] { color: var(--tango-color); }
+    .mode-tab.active[data-mode="pos"] { color: var(--pos-color); }
+
+    .btn-outline {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.35);
+      padding: 4px 10px; border-radius: 6px;
+      font-size: 0.75rem; font-weight: 700; color: #fff; cursor: pointer;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.25); }
+
+    /* メインコンテナ */
+    .container {
+      max-width: 980px;
+      margin: 8px auto;
+      padding: 0 10px 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ステータスバー */
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+      gap: 8px; margin-bottom: 8px;
+      background: var(--card);
+      padding: 7px 12px; border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.85);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.14);
+    }
+
+    .filter-group { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; flex-wrap: wrap; }
+    select {
+      padding: 4px 8px; border-radius: 6px; border: 1px solid #94a3b8;
+      font-size: 0.82rem; font-weight: 600; background: #fff;
+    }
+    .btn-shuffle {
+      background: #f1f5f9; border: 1px solid #94a3b8; padding: 4px 10px;
+      border-radius: 6px; font-size: 0.78rem; font-weight: 700; color: #1e293b; cursor: pointer;
+    }
+    .btn-shuffle:hover { background: #e2e8f0; }
+
+    .score-badges {
+      display: flex; gap: 10px; font-size: 0.85rem; font-weight: 800; align-items: center;
+    }
+
+    /* クリア済＆連続正解バッジ */
+    .streak-banner {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 12px; border-radius: 8px;
+      font-size: 0.86rem; font-weight: 900;
+      letter-spacing: 0.02em;
+      transition: all 0.35s ease;
+    }
+
+    .streak-blue {
+      background: linear-gradient(135deg, #0284c7, #1d4ed8);
+      color: #ffffff; border: 2px solid #7dd3fc;
+    }
+    .streak-yellow {
+      background: linear-gradient(180deg, #fef08a 0%, #facc15 50%, #ca8a04 100%);
+      color: #422006; border: 2px solid #ffffff;
+      box-shadow: 0 0 12px #facc15;
+    }
+    .streak-red {
+      background: linear-gradient(180deg, #fca5a5 0%, #ef4444 45%, #991b1b 100%);
+      color: #fef08a; border: 2px solid #fde047;
+      box-shadow: 0 0 16px #ef4444;
+    }
+    .streak-gold {
+      background: linear-gradient(180deg, #ffffff 0%, #fef08a 25%, #f59e0b 65%, #78350f 100%);
+      color: #450a0a; border: 2px solid #ffffff;
+      box-shadow: 0 0 20px #fde047;
+      animation: badgePulse 0.55s infinite alternate;
+    }
+    .streak-rainbow {
+      background: linear-gradient(90deg, #ff0055, #ff7700, #ffee00, #00dd55, #00ccff, #aa00ff, #ff00cc);
+      background-size: 200% 200%;
+      color: #ffffff; border: 2px solid #ffffff;
+      box-shadow: 0 0 22px rgba(255,255,255,0.95);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+      animation: rainbowBarMove 1.5s linear infinite, badgePulse 0.5s infinite alternate;
+    }
+
+    @keyframes badgePulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.03); }
+    }
+    @keyframes rainbowBarMove {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    /* 問題カード */
+    .question-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 12px 16px;
+      transition: all 0.4s ease;
+      border: 3px solid rgba(255,255,255,0.85);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.2);
+    }
+
+    body.stage-yellow .question-card, body.stage-yellow .status-bar {
+      border-color: #fef08a; box-shadow: 0 0 24px rgba(250, 204, 21, 0.75);
+    }
+    body.stage-red .question-card, body.stage-red .status-bar {
+      border-color: #fde047; box-shadow: 0 0 30px rgba(239, 68, 68, 0.9);
+    }
+    body.stage-gold .question-card, body.stage-gold .status-bar {
+      border-color: #ffffff; box-shadow: 0 0 36px rgba(253, 224, 71, 0.95);
+    }
+    body.stage-rainbow .question-card, body.stage-rainbow .status-bar {
+      border-color: #ffffff; box-shadow: 0 0 40px rgba(255, 255, 255, 0.95);
+    }
+
+    .top-info-row {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .question-meta {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .q-number { font-size: 1rem; font-weight: 900; }
+    .badge { padding: 2px 8px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
+    .badge-category { background: #e0e7ff; color: #3730a3; }
+    .badge-diff { background: #f1f5f9; color: #475569; }
+
+    .step-progress-bar {
+      display: flex; gap: 6px; flex: 1; max-width: 520px;
+    }
+    .step-pill {
+      flex: 1; text-align: center; padding: 4px 6px; border-radius: 6px;
+      font-size: 0.76rem; font-weight: 800; background: #f1f5f9; color: #64748b; border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .step-pill.active-1 { background: var(--bunsetsu-bg); color: var(--bunsetsu-color); border-color: #fda4af; }
+    .step-pill.active-2 { background: var(--tango-bg); color: var(--tango-color); border-color: #7dd3fc; }
+    .step-pill.active-3 { background: var(--pos-bg); color: var(--pos-color); border-color: #d8b4fe; }
+    .step-pill.done { background: var(--correct-bg); color: var(--correct-color); border-color: #86efac; }
+
+    .instruction-banner {
+      background: #f8fafc; border-left: 4px solid var(--primary); padding: 6px 12px;
+      border-radius: 6px; font-size: 0.84rem; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .instruction-banner.mode-bunsetsu { border-left-color: var(--bunsetsu-color); background: #fff1f2; }
+    .instruction-banner.mode-tango { border-left-color: var(--tango-color); background: #f0f9ff; }
+    .instruction-banner.mode-pos { border-left-color: var(--pos-color); background: #faf5ff; }
+    .counter-pill { background: #fff; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 0.78rem; border: 1px solid var(--border); white-space: nowrap; }
+
+    /* STEP 1 & 2: 文字・スラッシュ領域 */
+    .sentence-workspace {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+      padding: 16px 8px; background: #ffffff; border: 2px solid #cbd5e1;
+      border-radius: 10px; margin-bottom: 10px; min-height: 88px; user-select: none; row-gap: 10px;
+    }
+    .char-box { font-size: 1.5rem; font-weight: 800; padding: 4px 2px; color: var(--text); text-align: center; line-height: 1.1; }
+    .break-slot {
+      width: 22px; height: 44px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: relative; border-radius: 5px; margin: 0 1px;
+    }
+    .break-slot:hover { background-color: #f1f5f9; }
+    .break-slot::after { content: "・"; color: #cbd5e1; font-size: 1rem; }
+    .break-slot.active-bunsetsu { background-color: var(--bunsetsu-bg); }
+    .break-slot.active-bunsetsu::after { content: "／"; color: var(--bunsetsu-color); font-size: 1.55rem; font-weight: 900; }
+    .break-slot.active-tango { background-color: var(--tango-bg); }
+    .break-slot.active-tango::after { content: "｜"; color: var(--tango-color); font-size: 1.5rem; font-weight: 900; }
+    .break-slot.locked-bunsetsu { background-color: #ffe4e6; cursor: not-allowed; border: 1px solid #fecdd3; }
+    .break-slot.locked-bunsetsu::after { content: "／"; color: var(--bunsetsu-color); font-size: 1.5rem; font-weight: 900; }
+    .break-slot.judge-correct { background-color: var(--correct-bg) !important; border: 2px solid var(--correct-color); }
+    .break-slot.judge-correct::after { color: var(--correct-color) !important; }
+    .break-slot.judge-missed { background-color: var(--missed-bg) !important; border: 2px dashed var(--missed-color); }
+    .break-slot.judge-missed::after { content: "／"; color: var(--missed-color) !important; font-size: 1.5rem; font-weight: 900; }
+    .break-slot.judge-missed.missed-tango::after { content: "｜"; }
+    .break-slot.judge-extra { background-color: var(--extra-bg) !important; border: 2px solid var(--extra-color); }
+    .break-slot.judge-extra::after { content: "×"; color: var(--extra-color) !important; font-size: 1.2rem; font-weight: 900; }
+
+    /* STEP 3 品詞判定ワークスペース */
+    .pos-workspace { display: none; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .pos-workspace.active { display: flex; }
+    .word-chips-container {
+      display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center;
+      gap: 5px; padding: 10px 8px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 10px;
+    }
+    .bunsetsu-divider-mark { display: flex; align-items: center; font-size: 1.25rem; font-weight: 900; color: #fda4af; padding: 0 1px; user-select: none; }
+    .word-chip {
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      min-width: 52px; padding: 5px 7px; border-radius: 8px; border: 2px solid #cbd5e1;
+      background: #f8fafc; cursor: pointer; transition: all 0.12s;
+    }
+    .word-chip.selected-target { border-color: var(--pos-color); background: #faf5ff; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2); }
+    .word-surface { font-size: 1.08rem; font-weight: 800; color: var(--text); margin-bottom: 3px; white-space: nowrap; }
+    .word-pos-badge { font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: #e2e8f0; color: #475569; white-space: nowrap; }
+    .word-chip.filled .word-pos-badge { background: var(--pos-color); color: #ffffff; }
+    .word-chip.pos-correct { border-color: var(--correct-color) !important; background: var(--correct-bg) !important; }
+    .word-chip.pos-correct .word-pos-badge { background: var(--correct-color) !important; color: #fff !important; }
+    .word-chip.pos-incorrect { border-color: var(--missed-color) !important; background: var(--missed-bg) !important; }
+    .word-chip.pos-incorrect .word-pos-badge { background: var(--missed-color) !important; color: #fff !important; }
+    .pos-correction-note { font-size: 0.65rem; font-weight: 800; color: #c2410c; margin-top: 2px; white-space: nowrap; }
+
+    /* 品詞パレット（縦3行レイアウト：活用する自立語 ／ 活用しない自立語 ／ 付属語） */
+    .pos-palette { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+    .palette-header { font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; color: var(--pos-color); display: flex; justify-content: space-between; align-items: center; }
+    .pos-category-row { display: flex; flex-direction: column; gap: 5px; }
+    .pos-group { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .pos-group-label { font-size: 0.76rem; font-weight: 800; color: var(--text-sub); width: 138px; flex-shrink: 0; white-space: nowrap; }
+    .pos-btn {
+      border: 1px solid #cbd5e1; background: #ffffff; padding: 4px 12px; border-radius: 6px;
+      font-size: 0.82rem; font-weight: 800; color: var(--text); cursor: pointer; white-space: nowrap;
+    }
+    .pos-btn:hover { background: var(--pos-bg); border-color: var(--pos-color); color: var(--pos-color); }
+    .pos-btn.cat-katsuyo { border-bottom: 3px solid #ef4444; }
+    .pos-btn.cat-taigen { border-bottom: 3px solid #3b82f6; }
+    .pos-btn.cat-shuushoku { border-bottom: 3px solid #10b981; }
+    .pos-btn.cat-fuzoku { border-bottom: 3px solid #f59e0b; }
+
+    .nesayo-box { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 6px 12px; border-radius: 6px; font-size: 0.82rem; margin-bottom: 8px; display: none; }
+    .nesayo-box.visible { display: block; }
+    .nesayo-mark { color: #d97706; font-weight: 700; padding: 0 2px; }
+
+    /* 操作ボタン列 */
+    .control-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .left-controls, .right-controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .btn { border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 3px 8px rgba(37,99,235,0.3); }
+    .btn-success { background: var(--correct-color); color: #fff; box-shadow: 0 3px 10px rgba(22,163,74,0.4); }
+    .btn-purple { background: var(--pos-color); color: #fff; box-shadow: 0 3px 10px rgba(124,58,237,0.4); }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+    .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-hint { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+    /* 判定結果パネル */
+    .feedback-panel { margin-top: 8px; border-radius: 10px; padding: 8px 12px; display: none; }
+    .feedback-panel.show { display: block; }
+    .feedback-panel.correct { background: #f0fdf4; border: 2px solid #86efac; }
+    .feedback-panel.incorrect { background: #fff7ed; border: 2px solid #fed7aa; }
+    .feedback-title { font-size: 0.9rem; font-weight: 800; margin-bottom: 4px; }
+    .feedback-panel.correct .feedback-title { color: #15803d; }
+    .feedback-panel.incorrect .feedback-title { color: #c2410c; }
+    .explanation-box { background: rgba(255,255,255,0.92); border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; line-height: 1.4; }
+    .grammar-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+    .grammar-tag { background: #e0e7ff; color: #3730a3; padding: 1px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 600; }
+
+    /* ==========================================================
+       正解時の全画面カットイン演出
+    ========================================================== */
+    .cutin-overlay {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .cutin-overlay.active {
+      opacity: 1;
+      animation: cutinFlash 1.1s ease-out forwards;
+    }
+    .cutin-text {
+      font-size: clamp(3.2rem, 10vw, 5.8rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      background: linear-gradient(180deg, #ffffff 0%, #fef08a 25%, #f59e0b 55%, #b45309 80%, #fef08a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 0 #78350f) drop-shadow(0 -2px 0 #dc2626) drop-shadow(0 0 25px rgba(250, 204, 21, 0.95));
+      transform: scale(0.4);
+    }
+    .cutin-sub {
+      font-size: clamp(1.1rem, 3.5vw, 1.8rem);
+      font-weight: 900;
+      color: #ffffff;
+      background: linear-gradient(90deg, transparent, rgba(220,38,38,0.92), transparent);
+      padding: 4px 36px;
+      margin-top: -8px;
+      text-shadow: 0 2px 6px #000;
+      border-top: 2px solid #fde047;
+      border-bottom: 2px solid #fde047;
+    }
+    .cutin-overlay.active .cutin-text {
+      animation: popScale 1.05s cubic-bezier(0.17, 0.89, 0.32, 1.28) forwards;
+    }
+
+    @keyframes popScale {
+      0% { transform: scale(0.3) rotate(-4deg); }
+      35% { transform: scale(1.15) rotate(0deg); }
+      55% { transform: scale(1.0); }
+      85% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+    @keyframes cutinFlash {
+      0% { background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(250,204,21,0.4) 50%, transparent 80%); }
+      75% { opacity: 1; }
+      100% { opacity: 0; background: transparent; }
+    }
+
+    /* ==========================================================
+       20回連打時の画面暗転＆青文字版「人にまっすぐ。」警告ポップアップ
+    ========================================================== */
+    .blackout-modal {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.96);
+      z-index: 2000;
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+      animation: blackoutFadeIn 0.4s ease forwards;
+    }
+    .blackout-modal.open { display: flex; }
+    @keyframes blackoutFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .massugu-popup {
+      background: #ffffff;
+      max-width: 600px; width: 100%;
+      border-radius: 16px;
+      padding: 36px 28px 28px;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(29, 78, 216, 0.65), 0 20px 40px rgba(0, 0, 0, 0.85);
+      transform: scale(0.9);
+      animation: popupZoomIn 0.35s 0.15s cubic-bezier(0.17, 0.89, 0.32, 1.28) forwards;
+    }
+    @keyframes popupZoomIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .massugu-logo-wrap { position: relative; display: inline-block; margin-bottom: 14px; padding: 0 10px; }
+    .massugu-main-title {
+      font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "HGSMinchoE", "MS PMincho", serif;
+      color: #1d4ed8; font-weight: 900; letter-spacing: -0.02em; line-height: 1.1;
+      display: flex; align-items: baseline; justify-content: center; user-select: none;
+    }
+    .massugu-main-title .char-hito { font-size: clamp(3.2rem, 9vw, 4.8rem); transform: scaleX(0.92); }
+    .massugu-main-title .char-ni   { font-size: clamp(2.1rem, 6vw, 3.1rem); margin: 0 2px; }
+    .massugu-main-title .char-ma   { font-size: clamp(3rem, 8vw, 4.4rem); }
+    .massugu-main-title .char-tsu  { font-size: clamp(2.3rem, 6.5vw, 3.3rem); margin: 0 -2px; }
+    .massugu-main-title .char-su   { font-size: clamp(3rem, 8vw, 4.4rem); }
+    .massugu-main-title .char-gu   { font-size: clamp(3rem, 8vw, 4.4rem); }
+    .massugu-main-title .char-dot  { font-size: clamp(2.4rem, 6.5vw, 3.4rem); margin-left: -4px; }
+
+    .massugu-brush-svg { width: 92%; max-width: 440px; height: 32px; margin: -4px auto 0; display: block; }
+    .massugu-sub-message {
+      font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif;
+      font-size: clamp(1.3rem, 4vw, 1.9rem); font-weight: 900; color: #1d4ed8;
+      margin: 10px 0; letter-spacing: 0.08em;
+    }
+    .massugu-desc { font-size: 0.88rem; color: #64748b; font-weight: 700; margin-bottom: 20px; }
+    .btn-massugu-close {
+      background: #1d4ed8; color: #ffffff; border: none; padding: 10px 28px;
+      border-radius: 999px; font-size: 0.95rem; font-weight: 800; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.4);
+    }
+
+    @media (max-width: 680px) {
+      .char-box { font-size: 1.3rem; }
+      .break-slot { width: 20px; height: 40px; }
+      .mode-selector { flex-wrap: wrap; }
+      .pos-group-label { width: 100%; margin-bottom: 2px; }
+    }
+  </style>
+</head>
+<body class="stage-blue">
+
+<!-- 正解時の全画面カットイン演出 -->
+<div id="cutinOverlay" class="cutin-overlay">
+  <div id="cutinMainText" class="cutin-text">継 続</div>
+  <div id="cutinSubText" class="cutin-sub">連続正解記録 更新中！</div>
+</div>
+
+<!-- 20回連打時の暗転＆青文字版「人にまっすぐ。素直に生きよう」警告ポップアップ -->
+<div id="blackoutModal" class="blackout-modal">
+  <div class="massugu-popup">
+    <div class="massugu-logo-wrap">
+      <div class="massugu-main-title">
+        <span class="char-hito">人</span>
+        <span class="char-ni">に</span>
+        <span class="char-ma">ま</span>
+        <span class="char-tsu">っ</span>
+        <span class="char-su">す</span>
+        <span class="char-gu">ぐ</span>
+        <span class="char-dot">。</span>
+      </div>
+      <svg class="massugu-brush-svg" viewBox="0 0 500 45" preserveAspectRatio="none">
+        <defs>
+          <filter id="brushRoughness" x="-5%" y="-20%" width="110%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.18 0.65" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+        <path d="M 35 38 Q 230 14 440 8 L 430 18 Q 225 24 45 41 Z" fill="#1d4ed8" filter="url(#brushRoughness)" />
+      </svg>
+    </div>
+    <div class="massugu-sub-message">素直に生きよう</div>
+    <div class="massugu-desc">
+      「判定する」ボタンの20回連打による不正加算を検知したため、<br>
+      連続正解記録はすべて 0 にリセットされました。<br>
+      次の問題へ進んで、1問ずつ自分の力で挑戦しましょう。
+    </div>
+    <button class="btn-massugu-close" onclick="closeBlackoutModal()">素直に次の問題へ進む</button>
+  </div>
+</div>
+
+<!-- スリムヘッダー -->
+<header>
+  <div class="app-title">📘 中学口語文法ドリル（やみつき版）</div>
+  <div class="mode-selector">
+    <button class="mode-tab active" data-mode="step" onclick="setMode('step')">🎯 3段階ステップ</button>
+    <button class="mode-tab" data-mode="bunsetsu" onclick="setMode('bunsetsu')">✂️ 文節のみ</button>
+    <button class="mode-tab" data-mode="tango" onclick="setMode('tango')">🔍 単語のみ</button>
+    <button class="mode-tab" data-mode="pos" onclick="setMode('pos')">🏷️ 品詞のみ</button>
+  </div>
+  <button class="btn-outline" onclick="resetProgress()">🔄 記録リセット</button>
+</header>
+
+<div class="container">
+  <!-- ステータスバー -->
+  <div class="status-bar">
+    <div class="filter-group">
+      <label for="categorySelect"><strong>単元:</strong></label>
+      <select id="categorySelect" onchange="filterByCategory()"></select>
+      <label for="jumpSelect"><strong>問題:</strong></label>
+      <select id="jumpSelect" onchange="jumpToQuestion()"></select>
+      <button class="btn-shuffle" onclick="shuffleQuestions()">🎲 シャッフル</button>
+    </div>
+    <div class="score-badges">
+      <span id="progressText">1 / 60</span>
+      <div id="streakBanner" class="streak-banner streak-blue">
+        クリア済: <span id="clearedCount">0</span> / 60問（連続正解: <span id="streakCount">0</span>回）
+      </div>
+    </div>
+  </div>
+
+  <!-- メイン問題カード -->
+  <div class="question-card">
+    <div class="top-info-row">
+      <div class="question-meta">
+        <span class="q-number" id="qTitle">問題 1</span>
+        <span class="badge badge-category" id="qCategory"></span>
+        <span class="badge badge-diff" id="qDifficulty"></span>
+      </div>
+      <div id="stepProgressBar" class="step-progress-bar">
+        <div id="pillStep1" class="step-pill active-1">STEP 1：文節分け（／）</div>
+        <div id="pillStep2" class="step-pill">STEP 2：単語分け（｜）</div>
+        <div id="pillStep3" class="step-pill">STEP 3：品詞判定</div>
+      </div>
+    </div>
+
+    <div id="instructionBanner" class="instruction-banner mode-bunsetsu">
+      <span id="instructionText"></span>
+      <span class="counter-pill" id="countPill"></span>
+    </div>
+
+    <div id="sentenceWorkspace" class="sentence-workspace"></div>
+
+    <div id="posWorkspace" class="pos-workspace">
+      <div id="wordChipsContainer" class="word-chips-container"></div>
+      <!-- 縦3行（活用する自立語 ／ 活用しない自立語 ／ 付属語）の品詞パレット -->
+      <div class="pos-palette">
+        <div class="palette-header">
+          <span id="selectedWordPrompt">👆 上の単語カードをタップして品詞を選んでください</span>
+        </div>
+        <div class="pos-category-row">
+          <div class="pos-group">
+            <span class="pos-group-label">🔴 活用する自立語</span>
+            <button class="pos-btn cat-katsuyo" onclick="assignPosToSelected('動詞')">動詞</button>
+            <button class="pos-btn cat-katsuyo" onclick="assignPosToSelected('形容詞')">形容詞</button>
+            <button class="pos-btn cat-katsuyo" onclick="assignPosToSelected('形容動詞')">形容動詞</button>
+          </div>
+          <div class="pos-group">
+            <span class="pos-group-label">🔵 活用しない自立語</span>
+            <button class="pos-btn cat-taigen" onclick="assignPosToSelected('名詞')">名詞</button>
+            <button class="pos-btn cat-shuushoku" onclick="assignPosToSelected('副詞')">副詞</button>
+            <button class="pos-btn cat-shuushoku" onclick="assignPosToSelected('連体詞')">連体詞</button>
+            <button class="pos-btn cat-shuushoku" onclick="assignPosToSelected('接続詞')">接続詞</button>
+            <button class="pos-btn cat-shuushoku" onclick="assignPosToSelected('感動詞')">感動詞</button>
+          </div>
+          <div class="pos-group">
+            <span class="pos-group-label">🟡 付属語</span>
+            <button class="pos-btn cat-fuzoku" onclick="assignPosToSelected('助詞')">助詞（活用しない）</button>
+            <button class="pos-btn cat-fuzoku" onclick="assignPosToSelected('助動詞')">助動詞（活用する）</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="nesayoBox" class="nesayo-box"></div>
+
+    <!-- 操作ボタン列 -->
+    <div class="control-row">
+      <div class="left-controls">
+        <button class="btn btn-secondary" id="prevQBtn" onclick="navigateQuestion(-1)">◀ 前の問題</button>
+        <button class="btn btn-secondary" onclick="clearCurrentInput()">やり直す</button>
+        <button class="btn btn-hint" id="hintBtn" onclick="toggleNesayoHint()">💡「ね」で確認</button>
+        <button class="btn btn-secondary" onclick="showAnswerDirectly()">正解を見る</button>
+      </div>
+      <div class="right-controls">
+        <button class="btn btn-primary" id="judgeBtn" onclick="checkAnswer()">判定する</button>
+        <button class="btn btn-success" id="nextStep2Btn" style="display:none;" onclick="proceedToStep(2)">STEP 2（単語分け）へ ➔</button>
+        <button class="btn btn-purple" id="nextStep3Btn" style="display:none;" onclick="proceedToStep(3)">STEP 3（品詞判定）へ ➔</button>
+        <button class="btn btn-success" id="nextQInlineBtn" style="display:none;" onclick="navigateQuestion(1)">次の問題 ▶</button>
+      </div>
+    </div>
+
+    <div id="feedbackPanel" class="feedback-panel">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div class="explanation-box" id="explanationContent"></div>
+      <div class="grammar-tags" id="grammarTags"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function safeGetStorage(key) {
+  try { return window.localStorage.getItem(key); } catch (e) { return null; }
+}
+function safeSetStorage(key, val) {
+  try { window.localStorage.setItem(key, val); } catch (e) {}
+}
+function safeRemoveStorage(key) {
+  try { window.localStorage.removeItem(key); } catch (e) {}
+}
+
+const DEFAULT_PROBLEMS = [
+  {"id":1,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"姉｜は／図書館｜で／本｜を／読ん｜で／いる。","pos_list":["名詞","助詞","名詞","助詞","名詞","助詞","動詞","助詞","動詞"],"grammar_points":["補助動詞「いる」の分離","撥音便「読ん」＋接続助詞「で」"],"bunsetsu_explanation":"「姉は／図書館で／本を／読んで／いる。」の5文節。「いる」は補助動詞なので別文節にします。","tango_explanation":"「姉／は／図書館／で／本／を／読ん／で／いる。」の9単語です。","pos_explanation":"「図書館で」の「で」は格助詞、「読んで」の「で」は接続助詞。補助動詞「いる」は動詞です。"},
+  {"id":2,"category":"形容動詞・連体詞・副詞","difficulty":"標準","segmented_text":"静かな／部屋｜で／ゆっくり／休み｜たい。","pos_list":["形容動詞","名詞","助詞","副詞","動詞","助動詞"],"grammar_points":["形容動詞連体形「静かな」は1単語","希望の助動詞「たい」"],"bunsetsu_explanation":"「静かな／部屋で／ゆっくり／休みたい。」の4文節です。","tango_explanation":"「静かな／部屋／で／ゆっくり／休み／たい。」の6単語です。形容動詞「静かな」は1単語です。","pos_explanation":"「静かな」は形容動詞「静かだ」の連体形、「ゆっくり」は副詞、「たい」は助動詞です。"},
+  {"id":3,"category":"補助動詞・音便","difficulty":"応用","segmented_text":"昨日／買っ｜た／時計｜が／動か｜なく／なっ｜た。","pos_list":["名詞","動詞","助動詞","名詞","助詞","動詞","助動詞","動詞","助動詞"],"grammar_points":["促音便「買っ」「なっ」＋助動詞「た」","打消の助動詞「ない」の連用形「なく」"],"bunsetsu_explanation":"「昨日／買った／時計が／動かなく／なった。」の5文節。「なく」は助動詞なので前の「動か」と1文節になります。","tango_explanation":"「昨日／買っ／た／時計／が／動か／なく／なっ／た。」の9単語です。","pos_explanation":"動詞の未然形「動か」につく「なく」は打消の助動詞「ない」の連用形です。"},
+  {"id":4,"category":"補助形容詞・形式名詞","difficulty":"標準","segmented_text":"彼｜に／会う／こと｜は／ない｜だろ｜う。","pos_list":["名詞","助詞","動詞","名詞","助詞","形容詞","助動詞","助動詞"],"grammar_points":["形式名詞「こと」の分離","形容詞「ない」＋助動詞「だろ」＋助動詞「う」"],"bunsetsu_explanation":"「彼に／会う／ことは／ないだろう。」の4文節。「こと」は形式名詞なので直前で区切ります。","tango_explanation":"「彼／に／会う／こと／は／ない／だろ／う。」の8単語。「だろう」は助動詞「だ」の未然形「だろ」と推量の助動詞「う」の2単語に分かれます。","pos_explanation":"文節の先頭になっている「ない」は自立語の「形容詞」、後ろの「だろ」と「う」はそれぞれ「助動詞」です。"},
+  {"id":5,"category":"形容動詞・連体詞・副詞","difficulty":"基礎","segmented_text":"この／白い／花｜は／とても／美しい。","pos_list":["連体詞","形容詞","名詞","助詞","副詞","形容詞"],"grammar_points":["連体詞「この」は1単語","形容詞・副詞の文節"],"bunsetsu_explanation":"「この／白い／花は／とても／美しい。」の5文節です。","tango_explanation":"「この／白い／花／は／とても／美しい。」の6単語です。","pos_explanation":"「この」は連体詞、「とても」は副詞、「白い」「美しい」は形容詞です。"},
+  {"id":6,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"机｜の／上｜に／手紙｜が／置い｜て／ある。","pos_list":["名詞","助詞","名詞","助詞","名詞","助詞","動詞","助詞","動詞"],"grammar_points":["補助動詞「ある」の分離","イ音便「置い」＋接続助詞「て」"],"bunsetsu_explanation":"「机の／上に／手紙が／置いて／ある。」の5文節です。","tango_explanation":"「机／の／上／に／手紙／が／置い／て／ある。」の9単語です。","pos_explanation":"「ある」は補助動詞ですが、品詞分類は「動詞」です。"},
+  {"id":7,"category":"形容動詞・連体詞・副詞","difficulty":"応用","segmented_text":"大きな／公園｜が／きれいに／なっ｜た。","pos_list":["連体詞","名詞","助詞","形容動詞","動詞","助動詞"],"grammar_points":["連体詞「大きな」と形容動詞「きれいに」"],"bunsetsu_explanation":"「大きな／公園が／きれいに／なった。」の4文節です。","tango_explanation":"「大きな／公園／が／きれいに／なっ／た。」の6単語です。","pos_explanation":"「大きな」は連体詞、「きれいに」は形容動詞「きれいだ」の連用形（1単語）です。"},
+  {"id":8,"category":"補助形容詞・形式名詞","difficulty":"応用","segmented_text":"健康｜の／ため｜に／野菜｜を／食べ｜て／ほしい。","pos_list":["名詞","助詞","名詞","助詞","名詞","助詞","動詞","助詞","形容詞"],"grammar_points":["形式名詞「ため」","補助形容詞「ほしい」"],"bunsetsu_explanation":"「健康の／ために／野菜を／食べて／ほしい。」の5文節です。","tango_explanation":"「健康／の／ため／に／野菜／を／食べ／て／ほしい。」の9単語です。","pos_explanation":"形式名詞「ため」は名詞、補助形容詞「ほしい」は形容詞に分類します。"},
+  {"id":9,"category":"補助形容詞・形式名詞","difficulty":"応用","segmented_text":"弟｜に／大切な／本｜を／読ま｜れ｜たく｜は／ない。","pos_list":["名詞","助詞","形容動詞","名詞","助詞","動詞","助動詞","助動詞","助詞","形容詞"],"grammar_points":["動詞「読ま」＋受身「れ」＋希望「たく」＋助詞「は」","補助形容詞「ない」の分離"],"bunsetsu_explanation":"「弟に／大切な／本を／読まれたくは／ない。」の5文節です。助詞「は」の後ろにある「ない」は補助形容詞（自立語）なので、直前で文節を区切ります。","tango_explanation":"「弟／に／大切な／本／を／読ま／れ／たく／は／ない。」の10単語です。","pos_explanation":"「大切な」は形容動詞。「れ」「たく」は助動詞、文末の「ない」は補助形容詞（品詞は形容詞）です。"},
+  {"id":10,"category":"補助形容詞・形式名詞","difficulty":"応用","segmented_text":"その／問題｜は／あまり／難しく｜は／ない。","pos_list":["連体詞","名詞","助詞","副詞","形容詞","助詞","形容詞"],"grammar_points":["補助形容詞「ない」の分離（「難しくはない」）"],"bunsetsu_explanation":"「その／問題は／あまり／難しくは／ない。」の5文節です。","tango_explanation":"「その／問題／は／あまり／難しく／は／ない。」の7単語です。","pos_explanation":"「難しく（形容詞連用形）＋は」の後ろの「ない」は補助形容詞なので、品詞は「形容詞」です。"},
+  {"id":11,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"窓｜が／開け｜て／ある。","pos_list":["名詞","助詞","動詞","助詞","動詞"],"grammar_points":["補助動詞「ある」の分離","下一段活用「開ける」"],"bunsetsu_explanation":"「窓が／開けて／ある。」の3文節です。「ある」は補助動詞なので直前で文節を区切ります。","tango_explanation":"「窓／が／開け／て／ある。」の5単語です。","pos_explanation":"補助動詞「ある」も品詞分類では「動詞」となります。"},
+  {"id":12,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"明日｜の／予定｜を／調べ｜て／おく。","pos_list":["名詞","助詞","名詞","助詞","動詞","助詞","動詞"],"grammar_points":["補助動詞「おく」の分離"],"bunsetsu_explanation":"「明日の／予定を／調べて／おく。」の4文節です。","tango_explanation":"「明日／の／予定／を／調べ／て／おく。」の7単語です。","pos_explanation":"準備を表す「おく」は補助動詞（品詞は動詞）です。"},
+  {"id":13,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"新しい／靴｜を／履い｜て／み｜た。","pos_list":["形容詞","名詞","助詞","動詞","助詞","動詞","助動詞"],"grammar_points":["補助動詞「みる」の連用形「み」＋助動詞「た」"],"bunsetsu_explanation":"「新しい／靴を／履いて／みた。」の4文節です。","tango_explanation":"「新しい／靴／を／履い／て／み／た。」の7単語です。","pos_explanation":"「み」は上一段活用の補助動詞「みる」の連用形なので1文字でも「動詞」です。"},
+  {"id":14,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"大切な／皿｜を／割っ｜て／しまっ｜た。","pos_list":["形容動詞","名詞","助詞","動詞","助詞","動詞","助動詞"],"grammar_points":["補助動詞「しまう」の促音便「しまっ」＋助動詞「た」"],"bunsetsu_explanation":"「大切な／皿を／割って／しまった。」の4文節です。","tango_explanation":"「大切な／皿／を／割っ／て／しまっ／た。」の7単語です。","pos_explanation":"「大切な」は形容動詞。「割っ」も「しまっ」も五段活用動詞の促音便です。"},
+  {"id":15,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"冷たい／風｜が／吹い｜て／くる。","pos_list":["形容詞","名詞","助詞","動詞","助詞","動詞"],"grammar_points":["補助動詞「くる」の分離","イ音便「吹い」"],"bunsetsu_explanation":"「冷たい／風が／吹いて／くる。」の4文節です。","tango_explanation":"「冷たい／風／が／吹い／て／くる。」の6単語です。","pos_explanation":"「くる」はカ行変格活用の補助動詞（品詞は動詞）です。"},
+  {"id":16,"category":"補助動詞・音便","difficulty":"標準","segmented_text":"季節｜が／ゆっくりと／変わっ｜て／いく。","pos_list":["名詞","助詞","副詞","動詞","助詞","動詞"],"grammar_points":["副詞「ゆっくりと」は1単語","補助動詞「いく」"],"bunsetsu_explanation":"「季節が／ゆっくりと／変わって／いく。」の4文節です。「ゆっくりと」は1文節、「いく」は補助動詞なので別文節にします。","tango_explanation":"「季節／が／ゆっくりと／変わっ／て／いく。」の6単語です。「ゆっくりと」は全体で1単語の副詞です。","pos_explanation":"「ゆっくりと」は1単語の「副詞」として扱います。「いく」は補助動詞（品詞は動詞）です。"},
+  {"id":17,"category":"補助形容詞・形式名詞","difficulty":"応用","segmented_text":"僕｜の／意見｜も／聞い｜て／ほしい。","pos_list":["名詞","助詞","名詞","助詞","動詞","助詞","形容詞"],"grammar_points":["補助形容詞「ほしい」の分離"],"bunsetsu_explanation":"「僕の／意見も／聞いて／ほしい。」の4文節です。","tango_explanation":"「僕／の／意見／も／聞い／て／ほしい。」の7単語です。","pos_explanation":"「僕」は代名詞（名詞）、「ほしい」は補助形容詞（形容詞）です。"},
+  {"id":18,"category":"補助形容詞・形式名詞","difficulty":"応用","segmented_text":"今日｜の／テスト｜は／易しく｜は／ない。","pos_list":["名詞","助詞","名詞","助詞","形容詞","助詞","形容詞"],"grammar_points":["形容詞「易しく」＋助詞「は」＋補助形容詞「ない」"],"bunsetsu_explanation":"「今日の／テストは／易しくは／ない。」の4文節です。","tango_explanation":"「今日／の／テスト／は／易しく／は／ない。」の7単語です。","pos_explanation":"「易しく」も「ない」も品詞は「形容詞」です。"},
+  {"id":19,"category":"補助形容詞・形式名詞","difficulty":"標準","segmented_text":"早く／起きる／こと｜が／大切だ。","pos_list":["形容詞","動詞","名詞","助詞","形容動詞"],"grammar_points":["形式名詞「こと」","形容動詞終止形「大切だ」"],"bunsetsu_explanation":"「早く／起きる／ことが／大切だ。」の4文節です。","tango_explanation":"「早く／起きる／こと／が／大切だ。」の5単語です。「大切だ」は形容動詞なので1単語です。","pos_explanation":"「早く」は形容詞「早い」の連用形、「大切だ」は形容動詞です。"},
+  {"id":20,"category":"補助形容詞・形式名詞","difficulty":"応用","segmented_text":"今｜から／出かける／ところ｜だ。","pos_list":["名詞","助詞","動詞","名詞","助動詞"],"grammar_points":["形式名詞「ところ」＋断定の助動詞「だ」"],"bunsetsu_explanation":"「今から／出かける／ところだ。」の3文節です。","tango_explanation":"「今／から／出かける／ところ／だ。」の5単語です。","pos_explanation":"「ところだ」は名詞「ところ」＋断定の助動詞「だ」の2単語です。"},
+  {"id":21,"category":"五段活用と音便","difficulty":"標準","segmented_text":"急い｜で／駅｜へ／向かっ｜た。","pos_list":["動詞","助詞","名詞","助詞","動詞","助動詞"],"grammar_points":["ガ行イ音便「急い」＋接続助詞「で」","促音便「向かっ」＋助動詞「た」"],"bunsetsu_explanation":"「急いで／駅へ／向かった。」の3文節です。","tango_explanation":"「急い／で／駅／へ／向かっ／た。」の6単語です。","pos_explanation":"ガ行五段活用「急ぐ」がイ音便化すると後ろの助詞「て」が濁って「で」になります。"},
+  {"id":22,"category":"五段活用と音便","difficulty":"標準","segmented_text":"白い／鳥｜が／空｜へ／飛ん｜だ。","pos_list":["形容詞","名詞","助詞","名詞","助詞","動詞","助動詞"],"grammar_points":["バ行撥音便「飛ん」＋過去の助動詞「だ」","形容詞「白い」は単独で1文節"],"bunsetsu_explanation":"「白い／鳥が／空へ／飛んだ。」の4文節です。","tango_explanation":"「白い／鳥／が／空／へ／飛ん／だ。」の7単語です。「飛んだ」は動詞「飛ん」＋助動詞「だ」の2単語に分かれます。","pos_explanation":"「飛んだ」の「だ」は、撥音便「飛ん」の影響で過去の助動詞「た」が濁音化したものです（断定の助動詞「だ」ではありません）。"},
+  {"id":23,"category":"五段活用と音便","difficulty":"標準","segmented_text":"母｜に／荷物｜を／頼ま｜れ｜た。","pos_list":["名詞","助詞","名詞","助詞","動詞","助動詞","助動詞"],"grammar_points":["未然形「頼ま」＋受身の助動詞「れ」＋過去の助動詞「た」"],"bunsetsu_explanation":"「母に／荷物を／頼まれた。」の3文節です。","tango_explanation":"「母／に／荷物／を／頼ま／れ／た。」の7単語です。","pos_explanation":"五段活用動詞「頼む」の未然形「頼ま」には助動詞「れる」の連用形「れ」がつきます。"},
+  {"id":24,"category":"五段活用と音便","difficulty":"応用","segmented_text":"駅｜の／近く｜へ／引っ越し｜た。","pos_list":["名詞","助詞","名詞","助詞","動詞","助動詞"],"grammar_points":["サ行五段活用「引っ越す」は音便にならない"],"bunsetsu_explanation":"「駅の／近くへ／引っ越した。」の3文節です。","tango_explanation":"「駅／の／近く／へ／引っ越し／た。」の6単語です。","pos_explanation":"「駅の近くへ」の「近く」は前後に格助詞「の」「へ」がついているため「名詞」です。"},
+  {"id":25,"category":"五段活用と音便","difficulty":"応用","segmented_text":"友達｜と／歩い｜たり／走っ｜たり／する。","pos_list":["名詞","助詞","動詞","助動詞","動詞","助動詞","動詞"],"grammar_points":["過去・完了の助動詞「た」の連用形「たり」","サ変動詞「する」は別文節"],"bunsetsu_explanation":"「友達と／歩いたり／走ったり／する。」の4文節です。最後の「する」は自立語（動詞）なので独立した文節になります。","tango_explanation":"「友達／と／歩い／たり／走っ／たり／する。」の7単語です。「歩い」「走っ」は音便化した動詞、「たり」は助動詞です。","pos_explanation":"学校文法では、「〜たり」は過去・完了の助動詞「た」の連用形（たろ・たり・た・た・○・たら）として「助動詞」に分類します。"},
+  {"id":26,"category":"五段活用と音便","difficulty":"標準","segmented_text":"冷たい／水｜を／飲み｜たい。","pos_list":["形容詞","名詞","助詞","動詞","助動詞"],"grammar_points":["マ行五段連用形「飲み」＋助動詞「たい」"],"bunsetsu_explanation":"「冷たい／水を／飲みたい。」の3文節です。","tango_explanation":"「冷たい／水／を／飲み／たい。」の5単語です。","pos_explanation":"「冷たい」は形容詞、「たい」は希望の助動詞です。"},
+  {"id":27,"category":"五段活用と音便","difficulty":"応用","segmented_text":"先生｜に／名前｜を／呼ば｜れ｜た。","pos_list":["名詞","助詞","名詞","助詞","動詞","助動詞","助動詞"],"grammar_points":["バ行五段未然形「呼ば」＋受身「れ」＋過去「た」"],"bunsetsu_explanation":"「先生に／名前を／呼ばれた。」の3文節です。","tango_explanation":"「先生／に／名前／を／呼ば／れ／た。」の7単語です。","pos_explanation":"「れ」は受身の助動詞、「た」は過去の助動詞です。"},
+  {"id":28,"category":"五段活用と音便","difficulty":"標準","segmented_text":"川｜で／楽しく／泳い｜だ。","pos_list":["名詞","助詞","形容詞","動詞","助動詞"],"grammar_points":["ガ行イ音便「泳い」＋過去の助動詞「だ」"],"bunsetsu_explanation":"「川で／楽しく／泳いだ。」の3文節です。","tango_explanation":"「川／で／楽しく／泳い／だ。」の5単語です。","pos_explanation":"「楽しく」は活用するため副詞ではなく「形容詞」です。"},
+  {"id":29,"category":"五段活用と音便","difficulty":"応用","segmented_text":"弟｜に／買い物｜を／頼ん｜で／おい｜た。","pos_list":["名詞","助詞","名詞","助詞","動詞","助詞","動詞","助動詞"],"grammar_points":["撥音便「頼ん」＋助詞「で」","補助動詞イ音便「おい」＋助動詞「た」"],"bunsetsu_explanation":"「弟に／買い物を／頼んで／おいた。」の4文節です。","tango_explanation":"「弟／に／買い物／を／頼ん／で／おい／た。」の8単語です。","pos_explanation":"「で」は接続助詞、「た」は過去の助動詞です。"},
+  {"id":30,"category":"五段活用と音便","difficulty":"標準","segmented_text":"ここ｜に／傘｜を／貸し｜て／ください。","pos_list":["名詞","助詞","名詞","助詞","動詞","助詞","動詞"],"grammar_points":["サ行五段「貸し」＋助詞「て」","補助動詞「くださる」の特殊な命令形「ください」"],"bunsetsu_explanation":"「ここに／傘を／貸して／ください。」の4文節です。","tango_explanation":"「ここ／に／傘／を／貸し／て／ください。」の7単語です。","pos_explanation":"「ください」は補助動詞「くださる（ラ行五段活用）」の命令形なので品詞は「動詞」です。本来の五段活用の命令形は「くだされ」ですが、「くださる・いらっしゃる・おっしゃる・なさる・ござる」の5語は例外的に「〜い（ください）」も命令形になります。"},
+  {"id":31,"category":"形容動詞・連体詞・副詞","difficulty":"応用","segmented_text":"小さな／虫｜が／静かに／動く。","pos_list":["連体詞","名詞","助詞","形容動詞","動詞"],"grammar_points":["連体詞「小さな」と形容動詞連用形「静かに」"],"bunsetsu_explanation":"「小さな／虫が／静かに／動く。」の4文節です。","tango_explanation":"「小さな／虫／が／静かに／動く。」の5単語です。","pos_explanation":"「小さな」は連体詞、「静かに」は形容動詞です。"},
+  {"id":32,"category":"形容動詞・連体詞・副詞","difficulty":"応用","segmented_text":"おかしな／話｜を／聞い｜て／驚い｜た。","pos_list":["連体詞","名詞","助詞","動詞","助詞","動詞","助動詞"],"grammar_points":["連体詞「おかしな」の識別"],"bunsetsu_explanation":"「おかしな／話を／聞いて／驚いた。」の4文節です。","tango_explanation":"「おかしな／話／を／聞い／て／驚い／た。」の7単語です。","pos_explanation":"「おかしだ」という終止形はないため、「おかしな」は「連体詞」です。"},
+  {"id":33,"category":"形容動詞・連体詞・副詞","difficulty":"標準","segmented_text":"昨日｜の／夕焼け｜は／きれいだっ｜た。","pos_list":["名詞","助詞","名詞","助詞","形容動詞","助動詞"],"grammar_points":["形容動詞連用形「きれいだっ」＋過去の助動詞「た」"],"bunsetsu_explanation":"「昨日の／夕焼けは／きれいだった。」の3文節です。","tango_explanation":"「昨日／の／夕焼け／は／きれいだっ／た。」の6単語です。","pos_explanation":"形容動詞は活用語尾「だっ」までが1単語で、後ろの「た」だけが助動詞です。"},
+  {"id":34,"category":"形容動詞・連体詞・副詞","difficulty":"標準","segmented_text":"兄｜は／サッカー｜が／たいへん／上手だ。","pos_list":["名詞","助詞","名詞","助詞","副詞","形容動詞"],"grammar_points":["程度を表す副詞「たいへん」","形容動詞終止形「上手だ」"],"bunsetsu_explanation":"「兄は／サッカーが／たいへん／上手だ。」の4文節です。","tango_explanation":"「兄／は／サッカー／が／たいへん／上手だ。」の6単語です。","pos_explanation":"「たいへん」は用言「上手だ」を修飾しているため「副詞」です。"},
+  {"id":35,"category":"形容動詞・連体詞・副詞","difficulty":"応用","segmented_text":"少し／休め｜ば／元気に／なり｜ます。","pos_list":["副詞","動詞","助詞","形容動詞","動詞","助動詞"],"grammar_points":["仮定形「休め」＋助詞「ば」","形容動詞連用形「元気に」"],"bunsetsu_explanation":"「少し／休めば／元気に／なります。」の4文節です。","tango_explanation":"「少し／休め／ば／元気に／なり／ます。」の6単語です。","pos_explanation":"「元気に」は形容動詞「元気だ」の連用形なので1単語です。"},
+  {"id":36,"category":"形容動詞・連体詞・副詞","difficulty":"応用","segmented_text":"たいした／怪我｜は／なかっ｜た。","pos_list":["連体詞","名詞","助詞","形容詞","助動詞"],"grammar_points":["連体詞「たいした」","形容詞連用形「なかっ」＋助動詞「た」"],"bunsetsu_explanation":"「たいした／怪我は／なかった。」の3文節です。","tango_explanation":"「たいした／怪我／は／なかっ／た。」の5単語です。","pos_explanation":"「たいした」は1単語の連体詞です。"},
+  {"id":37,"category":"形容動詞・連体詞・副詞","difficulty":"応用","segmented_text":"あの／赤い／屋根｜は／図書館｜だ。","pos_list":["連体詞","形容詞","名詞","助詞","名詞","助動詞"],"grammar_points":["連体詞「あの」","名詞「図書館」＋断定の助動詞「だ」"],"bunsetsu_explanation":"「あの／赤い／屋根は／図書館だ。」の4文節です。","tango_explanation":"「あの／赤い／屋根／は／図書館／だ。」の6単語です。","pos_explanation":"「あの」は連体詞、「図書館だ」は名詞＋助動詞です。"},
+  {"id":38,"category":"形容動詞・連体詞・副詞","difficulty":"標準","segmented_text":"決して／約束｜を／破ら｜ない。","pos_list":["副詞","名詞","助詞","動詞","助動詞"],"grammar_points":["陳述の副詞「決して」は1単語"],"bunsetsu_explanation":"「決して／約束を／破らない。」の3文節です。","tango_explanation":"「決して／約束／を／破ら／ない。」の5単語です。","pos_explanation":"「決して」は打消と呼応する1単語の「副詞」です。"},
+  {"id":39,"category":"形容動詞・連体詞・副詞","difficulty":"標準","segmented_text":"穏やかな／春｜の／日｜が／続く。","pos_list":["形容動詞","名詞","助詞","名詞","助詞","動詞"],"grammar_points":["形容動詞連体形「穏やかな」"],"bunsetsu_explanation":"「穏やかな／春の／日が／続く。」の4文節です。","tango_explanation":"「穏やかな／春／の／日／が／続く。」の6単語です。","pos_explanation":"「穏やかな」は形容動詞「穏やかだ」の連体形（1単語）です。"},
+  {"id":40,"category":"形容動詞・連体詞・副詞","difficulty":"応用","segmented_text":"もっと／明るい／場所｜で／読も｜う。","pos_list":["副詞","形容詞","名詞","助詞","動詞","助動詞"],"grammar_points":["五段活用の未然形「読も」＋助動詞「う」"],"bunsetsu_explanation":"「もっと／明るい／場所で／読もう。」の4文節です。","tango_explanation":"「もっと／明るい／場所／で／読も／う。」の6単語です。","pos_explanation":"「読もう」は動詞「読も」＋助動詞「う」の2単語です。"},
+  {"id":41,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"机｜の／上｜に／辞書｜が／ない。","pos_list":["名詞","助詞","名詞","助詞","名詞","助詞","形容詞"],"grammar_points":["自立語（本形容詞）の「ない」"],"bunsetsu_explanation":"「机の／上に／辞書が／ない。」の4文節です。","tango_explanation":"「机／の／上／に／辞書／が／ない。」の7単語です。","pos_explanation":"文節の先頭になり「存在しない」を表す「ない」は「形容詞」です。"},
+  {"id":42,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"私｜は／まだ／昼食｜を／食べ｜て／い｜ない。","pos_list":["名詞","助詞","副詞","名詞","助詞","動詞","助詞","動詞","助動詞"],"grammar_points":["補助動詞「いる」の未然形「い」＋打消の助動詞「ない」"],"bunsetsu_explanation":"「私は／まだ／昼食を／食べて／いない。」の5文節です。","tango_explanation":"「私／は／まだ／昼食／を／食べ／て／い／ない。」の9単語です。","pos_explanation":"「い」は上一段活用の補助動詞「いる」の未然形（動詞）、「ない」は助動詞です。"},
+  {"id":43,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"空｜が／暗く／なり｜そうだ。","pos_list":["名詞","助詞","形容詞","動詞","助動詞"],"grammar_points":["動詞連用形「なり」＋様態の助動詞「そうだ」"],"bunsetsu_explanation":"「空が／暗く／なりそうだ。」の3文節です。","tango_explanation":"「空／が／暗く／なり／そうだ。」の5単語です。","pos_explanation":"動詞の連用形につく「そうだ」は様態の助動詞（1単語）です。"},
+  {"id":44,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"明日｜は／雨｜が／降る｜そうだ。","pos_list":["名詞","助詞","名詞","助詞","動詞","助動詞"],"grammar_points":["動詞終止形「降る」＋伝聞の助動詞「そうだ」"],"bunsetsu_explanation":"「明日は／雨が／降るそうだ。」の3文節です。","tango_explanation":"「明日／は／雨／が／降る／そうだ。」の6単語です。","pos_explanation":"用言の終止形につく「そうだ」は伝聞の助動詞（1単語）です。"},
+  {"id":45,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"あの／話｜は／本当｜らしい。","pos_list":["連体詞","名詞","助詞","名詞","助動詞"],"grammar_points":["名詞「本当」＋推定の助動詞「らしい」"],"bunsetsu_explanation":"「あの／話は／本当らしい。」の3文節です。","tango_explanation":"「あの／話／は／本当／らしい。」の5単語です。","pos_explanation":"根拠のある推定を表す「らしい」は助動詞です。"},
+  {"id":46,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"兄｜は／父｜に／背｜の／高さ｜が／似｜て／いる。","pos_list":["名詞","助詞","名詞","助詞","名詞","助詞","名詞","助詞","動詞","助詞","動詞"],"grammar_points":["派生語「高さ」は1単語の名詞","上一段活用「似る」は「似｜て」"],"bunsetsu_explanation":"「兄は／父に／背の／高さが／似て／いる。」の6文節です。","tango_explanation":"「兄／は／父／に／背／の／高さ／が／似／て／いる。」の11単語です。","pos_explanation":"接尾語「さ」がついた「高さ」は全体で1つの名詞です。"},
+  {"id":47,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"公園｜で／元気な／子ども｜が／遊ぶ。","pos_list":["名詞","助詞","形容動詞","名詞","助詞","動詞"],"grammar_points":["格助詞「で」と形容動詞連体形「元気な」"],"bunsetsu_explanation":"「公園で／元気な／子どもが／遊ぶ。」の4文節です。","tango_explanation":"「公園／で／元気な／子ども／が／遊ぶ。」の6単語です。","pos_explanation":"「公園で」の「で」は場所を表す格助詞です。"},
+  {"id":48,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"父｜は／医者｜で／母｜は／看護師｜だ。","pos_list":["名詞","助詞","名詞","助動詞","名詞","助詞","名詞","助動詞"],"grammar_points":["断定の助動詞「だ」の連用形「で」と終止形「だ」"],"bunsetsu_explanation":"「父は／医者で／母は／看護師だ。」の4文節です。","tango_explanation":"「父／は／医者／で／母／は／看護師／だ。」の8単語です。","pos_explanation":"「医者で」の「で」は「医者であり（医者だ）」と言い換えられるため、格助詞ではなく断定の助動詞「だ」の連用形です。"},
+  {"id":49,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"まるで／雪｜の｜ような／白い／花｜だ。","pos_list":["副詞","名詞","助詞","助動詞","形容詞","名詞","助動詞"],"grammar_points":["比況の助動詞「ようだ」の連体形「ような」"],"bunsetsu_explanation":"「まるで／雪のような／白い／花だ。」の4文節です。「ような」は助動詞なので前の「雪の」と1文節になります。","tango_explanation":"「まるで／雪／の／ような／白い／花／だ。」の7単語です。","pos_explanation":"「ような」は比況の助動詞「ようだ」の連体形です。"},
+  {"id":50,"category":"紛らわしい語の識別","difficulty":"応用","segmented_text":"まるで／春｜が／来｜た｜ようだ。","pos_list":["副詞","名詞","助詞","動詞","助動詞","助動詞"],"grammar_points":["カ変動詞連用形「来（き）」＋過去の助動詞「た」＋比況の助動詞「ようだ」"],"bunsetsu_explanation":"「まるで／春が／来たようだ。」の3文節です。「た」も「ようだ」も助動詞（付属語）なので、「来たようだ」全体で1つの文節になります。","tango_explanation":"「まるで／春／が／来／た／ようだ。」の6単語です。「来たようだ」は動詞「来」＋助動詞「た」＋助動詞「ようだ」の3単語に分かれます。","pos_explanation":"「まるで」は副詞、「来（き）」はカ行変格活用の動詞、「た」と「ようだ」はどちらも助動詞です。"},
+  {"id":51,"category":"複合語・接続詞・助動詞","difficulty":"標準","segmented_text":"しかし／彼｜は／すぐ／立ち上がっ｜た。","pos_list":["接続詞","名詞","助詞","副詞","動詞","助動詞"],"grammar_points":["接続詞「しかし」","複合動詞「立ち上がる」"],"bunsetsu_explanation":"「しかし／彼は／すぐ／立ち上がった。」の4文節です。","tango_explanation":"「しかし／彼／は／すぐ／立ち上がっ／た。」の6単語です。","pos_explanation":"複合動詞「立ち上がる」は分けずに1単語の動詞とします。"},
+  {"id":52,"category":"複合語・接続詞・助動詞","difficulty":"標準","segmented_text":"私｜が／部屋｜を／掃除し｜まし｜た。","pos_list":["名詞","助詞","名詞","助詞","動詞","助動詞","助動詞"],"grammar_points":["サ変動詞「掃除する」の連用形「掃除し」＋丁寧「まし」＋過去「た」"],"bunsetsu_explanation":"「私が／部屋を／掃除しました。」の3文節です。","tango_explanation":"「私／が／部屋／を／掃除し／まし／た。」の7単語です。「名詞＋する（掃除する・勉強する等）」は合わせて1つのサ変動詞として扱います。","pos_explanation":"「掃除し」はサ行変格活用の動詞（1単語）、後ろの「まし（ます）」「た」はどちらも助動詞です。"},
+  {"id":53,"category":"複合語・接続詞・助動詞","difficulty":"応用","segmented_text":"母｜は／妹｜に／野菜｜を／食べ｜させ｜た。","pos_list":["名詞","助詞","名詞","助詞","名詞","助詞","動詞","助動詞","助動詞"],"grammar_points":["下一段未然形「食べ」＋使役の助動詞「させ」＋過去の助動詞「た」"],"bunsetsu_explanation":"「母は／妹に／野菜を／食べさせた。」の4文節です。","tango_explanation":"「母／は／妹／に／野菜／を／食べ／させ／た。」の9単語です。","pos_explanation":"一段活用の動詞「食べる」には使役の助動詞「させる」がつきます。"},
+  {"id":54,"category":"複合語・接続詞・助動詞","difficulty":"応用","segmented_text":"だから／今日｜は／早く／帰ろ｜う。","pos_list":["接続詞","名詞","助詞","形容詞","動詞","助動詞"],"grammar_points":["接続詞「だから」は1単語","未然形「帰ろ」＋助動詞「う」"],"bunsetsu_explanation":"「だから／今日は／早く／帰ろう。」の4文節です。","tango_explanation":"「だから／今日／は／早く／帰ろ／う。」の6単語です。","pos_explanation":"文頭の「だから」は1単語の接続詞です。"},
+  {"id":55,"category":"複合語・接続詞・助動詞","difficulty":"応用","segmented_text":"弟｜が／泣き出し｜て／しまっ｜た。","pos_list":["名詞","助詞","動詞","助詞","動詞","助動詞"],"grammar_points":["複合動詞「泣き出す」は1単語","補助動詞「しまう」の分離"],"bunsetsu_explanation":"「弟が／泣き出して／しまった。」の3文節です。","tango_explanation":"「弟／が／泣き出し／て／しまっ／た。」の6単語です。","pos_explanation":"「泣き出す」は1つの複合動詞、「しまう」は補助動詞です。"},
+  {"id":56,"category":"複合語・接続詞・助動詞","difficulty":"応用","segmented_text":"先生｜に／ほめ｜られ｜て／うれしい。","pos_list":["名詞","助詞","動詞","助動詞","助詞","形容詞"],"grammar_points":["下一段「ほめ」＋受身の助動詞「られ」＋接続助詞「て」"],"bunsetsu_explanation":"「先生に／ほめられて／うれしい。」の3文節です。","tango_explanation":"「先生／に／ほめ／られ／て／うれしい。」の6単語です。","pos_explanation":"下一段活用「ほめる」には受身の助動詞「られる」がつきます。"},
+  {"id":57,"category":"複合語・接続詞・助動詞","difficulty":"標準","segmented_text":"もし／晴れ｜たら／山｜へ／登ろ｜う。","pos_list":["副詞","動詞","助動詞","名詞","助詞","動詞","助動詞"],"grammar_points":["呼応の副詞「もし」","助動詞「た」の仮定形「たら」"],"bunsetsu_explanation":"「もし／晴れたら／山へ／登ろう。」の4文節です。","tango_explanation":"「もし／晴れ／たら／山／へ／登ろ／う。」の7単語です。","pos_explanation":"「たら」は過去の助動詞「た」の仮定形（1単語）です。"},
+  {"id":58,"category":"複合語・接続詞・助動詞","difficulty":"応用","segmented_text":"音楽｜を／聴き｜ながら／勉強する。","pos_list":["名詞","助詞","動詞","助詞","動詞"],"grammar_points":["接続助詞「ながら」","サ変動詞「勉強する」"],"bunsetsu_explanation":"「音楽を／聴きながら／勉強する。」の3文節です。","tango_explanation":"「音楽／を／聴き／ながら／勉強する。」の5単語です。","pos_explanation":"「ながら」は活用しない付属語なので「（接続）助詞」です。"},
+  {"id":59,"category":"複合語・接続詞・助動詞","difficulty":"応用","segmented_text":"彼｜なら／きっと／来る／はず｜だ。","pos_list":["名詞","助動詞","副詞","動詞","名詞","助動詞"],"grammar_points":["断定の助動詞「だ」の仮定形「なら」","形式名詞「はず」＋助動詞「だ」"],"bunsetsu_explanation":"「彼なら／きっと／来る／はずだ。」の4文節です。","tango_explanation":"「彼／なら／きっと／来る／はず／だ。」の6単語です。","pos_explanation":"名詞「彼」に直接つく「なら」は断定の助動詞「だ」の仮定形です。"},
+  {"id":60,"category":"複合語・接続詞・助動詞","difficulty":"応用","segmented_text":"誰｜に｜も／言わ｜れ｜なかっ｜た。","pos_list":["名詞","助詞","助詞","動詞","助動詞","助動詞","助動詞"],"grammar_points":["助詞の連続「誰｜に｜も」","動詞「言わ」＋受身「れ」＋打消「なかっ」＋過去「た」"],"bunsetsu_explanation":"「誰にも／言われなかった。」の2文節です。","tango_explanation":"「誰／に／も／言わ／れ／なかっ／た。」の7単語です。","pos_explanation":"「に」は格助詞、「も」は係助詞。「れ」「なかっ」「た」は助動詞です。"}
+];
+
+let allProblems = [];
+let filteredProblems = [];
+let currentIndex = 0;
+let currentMode = 'step';
+let currentStep = 1;
+let userBreaks = new Set();
+let lockedBunsetsuBreaks = new Set();
+let userPosSelections = [];
+let selectedWordIndex = 0;
+let isJudged = false;
+let judgeSpamCount = 0;
+let isAnswerShownByCheat = false;
+let showNesayo = false;
+let clearedIds = new Set();
+let currentStreak = 0;
+let isInitialized = false;
+
+function parseSegmentedText(segmentedText, rawPosList) {
+  const chars = [];
+  const bunsetsuBreaks = [];
+  const tangoBreaks = [];
+  const words = [];
+  let currentWordChars = [];
+
+  for (let i = 0; i < segmentedText.length; i++) {
+    const ch = segmentedText[i];
+    if (ch === '／' || ch === '/') {
+      const idx = chars.length - 1;
+      if (idx >= 0) { bunsetsuBreaks.push(idx); tangoBreaks.push(idx); }
+      if (currentWordChars.length > 0) {
+        words.push({ surface: currentWordChars.join(''), isBunsetsuEnd: true });
+        currentWordChars = [];
+      }
+    } else if (ch === '｜' || ch === '|') {
+      const idx = chars.length - 1;
+      if (idx >= 0) tangoBreaks.push(idx);
+      if (currentWordChars.length > 0) {
+        words.push({ surface: currentWordChars.join(''), isBunsetsuEnd: false });
+        currentWordChars = [];
+      }
+    } else if (ch === '、' || ch === '。' || ch === '？' || ch === '！') {
+      if (chars.length > 0) {
+        chars[chars.length - 1] += ch;
+      } else {
+        chars.push(ch);
+      }
+      currentWordChars.push(ch);
+    } else if (ch.trim() !== '') {
+      chars.push(ch);
+      currentWordChars.push(ch);
+    }
+  }
+  if (currentWordChars.length > 0) {
+    words.push({ surface: currentWordChars.join(''), isBunsetsuEnd: true });
+  }
+  words.forEach((w, idx) => {
+    w.correctPos = (Array.isArray(rawPosList) && rawPosList[idx]) ? rawPosList[idx] : '名詞';
+  });
+  return {
+    chars, bunsetsuBreaks, tangoBreaks, words,
+    bunsetsuCount: bunsetsuBreaks.length + 1,
+    tangoCount: tangoBreaks.length + 1
+  };
+}
+
+function initApp() {
+  if (isInitialized) return;
+  isInitialized = true;
+
+  const savedCleared = safeGetStorage('grammar_cleared_v13');
+  const savedStreak = safeGetStorage('grammar_streak_v13');
+  if (savedCleared) {
+    try { clearedIds = new Set(JSON.parse(savedCleared)); } catch (e) {}
+  }
+  if (savedStreak) {
+    currentStreak = parseInt(savedStreak, 10) || 0;
+  }
+
+  allProblems = DEFAULT_PROBLEMS.map((item, idx) => {
+    const parsed = parseSegmentedText(item.segmented_text, item.pos_list);
+    return {
+      ...item,
+      id: item.id || idx + 1,
+      chars: parsed.chars,
+      bunsetsuBreaks: parsed.bunsetsuBreaks,
+      tangoBreaks: parsed.tangoBreaks,
+      words: parsed.words,
+      bunsetsu_count: parsed.bunsetsuCount,
+      tango_count: parsed.tangoCount
+    };
+  });
+  populateCategoryFilter();
+  filteredProblems = [...allProblems];
+  populateJumpSelect();
+  currentIndex = 0;
+  resetQuestionState();
+  renderQuestion();
+  updateStageTheme();
+}
+
+function updateStageTheme() {
+  const body = document.body;
+  const banner = document.getElementById('streakBanner');
+
+  body.className = '';
+  banner.className = 'streak-banner';
+
+  if (currentStreak >= 15) {
+    body.classList.add('stage-rainbow');
+    banner.classList.add('streak-rainbow');
+  } else if (currentStreak >= 10) {
+    body.classList.add('stage-gold');
+    banner.classList.add('streak-gold');
+  } else if (currentStreak >= 7) {
+    body.classList.add('stage-red');
+    banner.classList.add('streak-red');
+  } else if (currentStreak >= 3) {
+    body.classList.add('stage-yellow');
+    banner.classList.add('streak-yellow');
+  } else {
+    body.classList.add('stage-blue');
+    banner.classList.add('streak-blue');
+  }
+
+  banner.innerHTML = `クリア済: <span>${clearedIds.size}</span> / 60問（連続正解: <span>${currentStreak}</span>回）`;
+}
+
+function triggerCutinEffect() {
+  const overlay = document.getElementById('cutinOverlay');
+  const mainText = document.getElementById('cutinMainText');
+  const subText = document.getElementById('cutinSubText');
+
+  if (currentStreak >= 15) {
+    mainText.textContent = '極 彩 継 続';
+    subText.textContent = `${currentStreak}回 連続正解達成！`;
+  } else if (currentStreak >= 10) {
+    mainText.textContent = '黄 金 継 続';
+    subText.textContent = `${currentStreak}回 連続正解達成！`;
+  } else if (currentStreak >= 7) {
+    mainText.textContent = '灼 熱 継 続';
+    subText.textContent = `${currentStreak}回 連続正解中！`;
+  } else if (currentStreak >= 3) {
+    mainText.textContent = '継 続';
+    subText.textContent = `${currentStreak}回 連続正解中！`;
+  } else {
+    mainText.textContent = '正 解';
+    subText.textContent = `連続正解: ${currentStreak}回`;
+  }
+
+  overlay.classList.remove('active');
+  void overlay.offsetWidth;
+  overlay.classList.add('active');
+}
+
+function triggerBlackoutWarning() {
+  handleStreakFail();
+  document.getElementById('blackoutModal').classList.add('open');
+}
+
+function closeBlackoutModal() {
+  document.getElementById('blackoutModal').classList.remove('open');
+  judgeSpamCount = 0;
+  if (currentIndex < filteredProblems.length - 1) {
+    currentIndex++;
+  }
+  resetQuestionState();
+  renderQuestion();
+}
+
+function populateCategoryFilter() {
+  const select = document.getElementById('categorySelect');
+  const categories = Array.from(new Set(allProblems.map(p => p.category)));
+  select.innerHTML = `<option value="ALL">すべての単元 (${allProblems.length}問)</option>`;
+  categories.forEach(cat => {
+    const count = allProblems.filter(p => p.category === cat).length;
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = `${cat} (${count}問)`;
+    select.appendChild(opt);
+  });
+}
+
+function populateJumpSelect() {
+  const jump = document.getElementById('jumpSelect');
+  jump.innerHTML = '';
+  filteredProblems.forEach((p, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    const mark = clearedIds.has(p.id) ? '⭕ ' : '';
+    opt.textContent = `${mark}問${p.id}: ${p.chars.join('').slice(0, 10)}…`;
+    jump.appendChild(opt);
+  });
+  jump.value = currentIndex;
+}
+
+function filterByCategory() {
+  const cat = document.getElementById('categorySelect').value;
+  filteredProblems = (cat === 'ALL') ? [...allProblems] : allProblems.filter(p => p.category === cat);
+  currentIndex = 0;
+  populateJumpSelect();
+  resetQuestionState();
+  renderQuestion();
+}
+
+function jumpToQuestion() {
+  currentIndex = parseInt(document.getElementById('jumpSelect').value, 10) || 0;
+  resetQuestionState();
+  renderQuestion();
+}
+
+function shuffleQuestions() {
+  for (let i = filteredProblems.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [filteredProblems[i], filteredProblems[j]] = [filteredProblems[j], filteredProblems[i]];
+  }
+  currentIndex = 0;
+  populateJumpSelect();
+  resetQuestionState();
+  renderQuestion();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  resetQuestionState();
+  renderQuestion();
+}
+
+function resetQuestionState() {
+  const q = filteredProblems[currentIndex];
+  if (currentMode === 'step' || currentMode === 'bunsetsu') currentStep = 1;
+  else if (currentMode === 'tango') currentStep = 2;
+  else if (currentMode === 'pos') currentStep = 3;
+
+  userBreaks.clear();
+  lockedBunsetsuBreaks.clear();
+  userPosSelections = q ? new Array(q.words.length).fill(null) : [];
+  selectedWordIndex = 0;
+  isJudged = false;
+  judgeSpamCount = 0;
+  isAnswerShownByCheat = false;
+
+  document.getElementById('feedbackPanel').className = 'feedback-panel';
+  document.getElementById('nextStep2Btn').style.display = 'none';
+  document.getElementById('nextStep3Btn').style.display = 'none';
+  document.getElementById('nextQInlineBtn').style.display = 'none';
+  document.getElementById('judgeBtn').style.display = 'inline-flex';
+}
+
+function getActiveStage() {
+  if (currentMode === 'bunsetsu') return 1;
+  if (currentMode === 'tango') return 2;
+  if (currentMode === 'pos') return 3;
+  return currentStep;
+}
+
+function renderQuestion() {
+  if (filteredProblems.length === 0) return;
+  const q = filteredProblems[currentIndex];
+  const stage = getActiveStage();
+
+  document.getElementById('progressText').textContent = `${currentIndex + 1} / ${filteredProblems.length}`;
+  document.getElementById('qTitle').textContent = `問題 ${q.id}`;
+  document.getElementById('qCategory').textContent = q.category;
+  document.getElementById('qDifficulty').textContent = q.difficulty;
+  document.getElementById('jumpSelect').value = currentIndex;
+
+  const stepBar = document.getElementById('stepProgressBar');
+  if (currentMode === 'step') {
+    stepBar.style.display = 'flex';
+    document.getElementById('pillStep1').className = 'step-pill ' + (stage === 1 ? 'active-1' : 'done');
+    document.getElementById('pillStep2').className = 'step-pill ' + (stage === 2 ? 'active-2' : (stage > 2 ? 'done' : ''));
+    document.getElementById('pillStep3').className = 'step-pill ' + (stage === 3 ? 'active-3' : '');
+  } else {
+    stepBar.style.display = 'none';
+  }
+
+  const banner = document.getElementById('instructionBanner');
+  const instText = document.getElementById('instructionText');
+  const hintBtn = document.getElementById('hintBtn');
+  const sentenceWs = document.getElementById('sentenceWorkspace');
+  const posWs = document.getElementById('posWorkspace');
+
+  if (stage === 1) {
+    banner.className = 'instruction-banner mode-bunsetsu';
+    instText.innerHTML = '<strong>【STEP 1：文節分け】</strong> 文字の間をタップして、<strong>文節の区切り（／）</strong>を入れてください。';
+    hintBtn.style.display = 'inline-flex';
+    sentenceWs.style.display = 'flex';
+    posWs.classList.remove('active');
+    updateCounterPill();
+    renderSentenceWorkspace(q, 'bunsetsu');
+    renderNesayoPreview(q);
+  } else if (stage === 2) {
+    banner.className = 'instruction-banner mode-tango';
+    instText.innerHTML = currentMode === 'step'
+      ? '<strong>【STEP 2：単語分け】</strong> 赤い「／」は固定されています。さらに<strong>文節の内部で単語に分かれる場所（｜）</strong>をタップしてください。'
+      : '<strong>【単語分け】</strong> 文字の間をタップして、<strong>すべての単語の区切り（｜）</strong>を入れてください。';
+    hintBtn.style.display = 'none';
+    sentenceWs.style.display = 'flex';
+    posWs.classList.remove('active');
+    document.getElementById('nesayoBox').classList.remove('visible');
+    updateCounterPill();
+    renderSentenceWorkspace(q, 'tango');
+  } else {
+    banner.className = 'instruction-banner mode-pos';
+    instText.innerHTML = '<strong>【STEP 3：品詞判定】</strong> 各単語をタップし、下のボタンから<strong>品詞</strong>を選んでください。';
+    hintBtn.style.display = 'none';
+    sentenceWs.style.display = 'none';
+    posWs.classList.add('active');
+    document.getElementById('nesayoBox').classList.remove('visible');
+    updateCounterPill();
+    renderPosWorkspace(q);
+  }
+
+  document.getElementById('prevQBtn').disabled = (currentIndex === 0);
+}
+
+function updateCounterPill() {
+  const q = filteredProblems[currentIndex];
+  const stage = getActiveStage();
+  const pill = document.getElementById('countPill');
+  if (stage === 1) pill.textContent = `現在の文節数：${userBreaks.size + 1} 文節`;
+  else if (stage === 2) pill.textContent = `現在の単語数：${userBreaks.size + lockedBunsetsuBreaks.size + 1} 単語`;
+  else pill.textContent = `品詞の入力済み：${userPosSelections.filter(Boolean).length} / ${q.words.length} 単語`;
+}
+
+function renderSentenceWorkspace(q, targetType) {
+  const ws = document.getElementById('sentenceWorkspace');
+  ws.innerHTML = '';
+  q.chars.forEach((ch, idx) => {
+    const charEl = document.createElement('div');
+    charEl.className = 'char-box';
+    charEl.textContent = ch;
+    ws.appendChild(charEl);
+
+    if (idx < q.chars.length - 1) {
+      const slot = document.createElement('div');
+      slot.className = 'break-slot';
+      slot.dataset.index = idx;
+      if (lockedBunsetsuBreaks.has(idx)) slot.classList.add('locked-bunsetsu');
+      else if (userBreaks.has(idx)) slot.classList.add(targetType === 'bunsetsu' ? 'active-bunsetsu' : 'active-tango');
+      slot.onclick = () => toggleBreakSlot(idx);
+      ws.appendChild(slot);
+    }
+  });
+}
+
+function toggleBreakSlot(idx) {
+  if (lockedBunsetsuBreaks.has(idx)) return;
+  if (isJudged) {
+    isJudged = false;
+    document.getElementById('feedbackPanel').className = 'feedback-panel';
+  }
+  if (userBreaks.has(idx)) userBreaks.delete(idx);
+  else userBreaks.add(idx);
+
+  const q = filteredProblems[currentIndex];
+  const stage = getActiveStage();
+  updateCounterPill();
+  renderSentenceWorkspace(q, stage === 1 ? 'bunsetsu' : 'tango');
+  renderNesayoPreview(q);
+}
+
+function renderPosWorkspace(q) {
+  const container = document.getElementById('wordChipsContainer');
+  container.innerHTML = '';
+
+  q.words.forEach((wordObj, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'word-chip';
+    if (idx === selectedWordIndex && !isJudged) chip.classList.add('selected-target');
+    if (userPosSelections[idx]) chip.classList.add('filled');
+
+    const surfaceEl = document.createElement('div');
+    surfaceEl.className = 'word-surface';
+    surfaceEl.textContent = wordObj.surface;
+
+    const badgeEl = document.createElement('div');
+    badgeEl.className = 'word-pos-badge';
+    badgeEl.textContent = userPosSelections[idx] || '未選択';
+
+    chip.appendChild(surfaceEl);
+    chip.appendChild(badgeEl);
+
+    if (isJudged) {
+      if (userPosSelections[idx] === wordObj.correctPos) {
+        chip.classList.add('pos-correct');
+      } else {
+        chip.classList.add('pos-incorrect');
+        const note = document.createElement('div');
+        note.className = 'pos-correction-note';
+        note.textContent = `正: ${wordObj.correctPos}`;
+        chip.appendChild(note);
+      }
+    }
+
+    chip.onclick = () => {
+      if (isJudged) {
+        isJudged = false;
+        document.getElementById('feedbackPanel').className = 'feedback-panel';
+      }
+      selectedWordIndex = idx;
+      renderPosWorkspace(q);
+    };
+    container.appendChild(chip);
+
+    if (wordObj.isBunsetsuEnd && idx < q.words.length - 1) {
+      const divMark = document.createElement('div');
+      divMark.className = 'bunsetsu-divider-mark';
+      divMark.textContent = '／';
+      container.appendChild(divMark);
+    }
+  });
+
+  const targetWord = q.words[selectedWordIndex];
+  if (targetWord) {
+    document.getElementById('selectedWordPrompt').innerHTML = `🎯 選択中の単語：「<strong>${targetWord.surface}</strong>」の品詞を選んでください`;
+  }
+}
+
+function assignPosToSelected(posName) {
+  const q = filteredProblems[currentIndex];
+  if (isJudged) {
+    isJudged = false;
+    document.getElementById('feedbackPanel').className = 'feedback-panel';
+  }
+  userPosSelections[selectedWordIndex] = posName;
+  const nextEmpty = userPosSelections.findIndex((val, i) => i > selectedWordIndex && !val);
+  if (nextEmpty !== -1) selectedWordIndex = nextEmpty;
+  else if (selectedWordIndex < q.words.length - 1) selectedWordIndex++;
+
+  updateCounterPill();
+  renderPosWorkspace(q);
+}
+
+function toggleNesayoHint() {
+  showNesayo = !showNesayo;
+  renderNesayoPreview(filteredProblems[currentIndex]);
+}
+
+function renderNesayoPreview(q) {
+  const box = document.getElementById('nesayoBox');
+  if (!showNesayo || getActiveStage() !== 1) {
+    box.classList.remove('visible');
+    return;
+  }
+  box.classList.add('visible');
+  let html = '<strong>💡「ね」を入れて読んだときのイメージ：</strong> 「 ';
+  q.chars.forEach((ch, idx) => {
+    html += ch;
+    if (userBreaks.has(idx)) html += '<span class="nesayo-mark">ね</span> ／ ';
+  });
+  html += ' 」';
+  box.innerHTML = html;
+}
+
+function checkAnswer() {
+  const q = filteredProblems[currentIndex];
+  const stage = getActiveStage();
+
+  if (isAnswerShownByCheat) return;
+
+  isJudged = true;
+
+  if (stage === 1 || stage === 2) {
+    const targetType = (stage === 1) ? 'bunsetsu' : 'tango';
+    const correctIndices = new Set(stage === 1 ? q.bunsetsuBreaks : q.tangoBreaks);
+    const currentCombined = new Set([...lockedBunsetsuBreaks, ...userBreaks]);
+    let missedCount = 0, extraCount = 0;
+
+    document.querySelectorAll('.break-slot').forEach(slot => {
+      const idx = parseInt(slot.dataset.index, 10);
+      const isCorrectTarget = correctIndices.has(idx);
+      const isUserSelected = currentCombined.has(idx);
+      if (isCorrectTarget && isUserSelected) slot.classList.add('judge-correct');
+      else if (isCorrectTarget && !isUserSelected) {
+        slot.classList.add('judge-missed');
+        if (targetType === 'tango') slot.classList.add('missed-tango');
+        missedCount++;
+      } else if (!isCorrectTarget && isUserSelected) {
+        slot.classList.add('judge-extra');
+        extraCount++;
+      }
+    });
+    const isPerfect = (missedCount === 0 && extraCount === 0);
+    if (isPerfect) {
+      judgeSpamCount++;
+      if (judgeSpamCount >= 20) {
+        triggerBlackoutWarning();
+        return;
+      }
+    }
+    showStep1And2Feedback(q, stage, isPerfect, missedCount, extraCount);
+  } else {
+    let wrongPosCount = 0;
+    q.words.forEach((w, idx) => { if (userPosSelections[idx] !== w.correctPos) wrongPosCount++; });
+    renderPosWorkspace(q);
+    const isPerfect = (wrongPosCount === 0);
+    if (isPerfect) {
+      judgeSpamCount++;
+      if (judgeSpamCount >= 20) {
+        triggerBlackoutWarning();
+        return;
+      }
+    }
+    showStep3Feedback(q, stage, wrongPosCount);
+  }
+}
+
+function showStep1And2Feedback(q, stage, isPerfect, missedCount, extraCount) {
+  const panel = document.getElementById('feedbackPanel');
+  const title = document.getElementById('feedbackTitle');
+  const content = document.getElementById('explanationContent');
+  panel.className = 'feedback-panel show ' + (isPerfect ? 'correct' : 'incorrect');
+
+  if (isPerfect) {
+    const isFinalForMode = (currentMode !== 'step');
+    handleStreakSuccess(q.id, isFinalForMode);
+
+    if (currentMode === 'step' && stage === 1) {
+      title.innerHTML = `⭕ STEP 1（文節分け）正解！（連続正解: ${currentStreak}回）続けて「STEP 2：単語分け」へ進みましょう！`;
+      document.getElementById('nextStep2Btn').style.display = 'inline-flex';
+    } else if (currentMode === 'step' && stage === 2) {
+      title.innerHTML = `⭕ STEP 2（単語分け）正解！（連続正解: ${currentStreak}回）次は「STEP 3：品詞判定」へ進みましょう！`;
+      document.getElementById('nextStep3Btn').style.display = 'inline-flex';
+    } else {
+      title.innerHTML = `🎉 正解！（現在 ${currentStreak}回 連続正解中！）`;
+      if (currentIndex < filteredProblems.length - 1) {
+        document.getElementById('nextQInlineBtn').style.display = 'inline-flex';
+      }
+    }
+  } else {
+    handleStreakFail();
+    title.innerHTML = `⚠️ おしい！（切り忘れ: ${missedCount}箇所 ／ 余分な区切り: ${extraCount}箇所） ※連続正解が0に戻りました`;
+  }
+
+  content.innerHTML = stage === 1
+    ? `<div><strong>【文節分けの解説】（正解：${q.bunsetsu_count}文節）</strong> ${q.bunsetsu_explanation}</div>`
+    : `<div><strong>【単語分けの解説】（正解：${q.tango_count}単語）</strong> ${q.tango_explanation}</div>`;
+  renderGrammarTags(q);
+}
+
+function showStep3Feedback(q, stage, wrongPosCount) {
+  const panel = document.getElementById('feedbackPanel');
+  const title = document.getElementById('feedbackTitle');
+  const content = document.getElementById('explanationContent');
+  const isPerfect = (wrongPosCount === 0);
+  panel.className = 'feedback-panel show ' + (isPerfect ? 'correct' : 'incorrect');
+
+  if (isPerfect) {
+    handleStreakSuccess(q.id, true);
+    title.innerHTML = `🏆 全ステップ完全クリア！（現在 ${currentStreak}回 連続正解継続中！）`;
+  } else {
+    handleStreakFail();
+    title.innerHTML = `⚠️ おしい！（品詞の誤り・未選択が ${wrongPosCount} 単語） ※連続正解が0に戻りました`;
+  }
+
+  if (currentIndex < filteredProblems.length - 1) {
+    document.getElementById('nextQInlineBtn').style.display = 'inline-flex';
+  }
+
+  const posBreakdown = q.words.map(w => `<strong>${w.surface}</strong>【${w.correctPos}】`).join(' ＋ ');
+  content.innerHTML = `<div><strong>【品詞の内訳】</strong> ${posBreakdown}</div><div style="margin-top:4px;"><strong>【解説】</strong> ${q.pos_explanation}</div>`;
+  renderGrammarTags(q);
+}
+
+function handleStreakSuccess(id, markQuestionCleared) {
+  currentStreak++;
+  if (markQuestionCleared) {
+    clearedIds.add(id);
+    safeSetStorage('grammar_cleared_v13', JSON.stringify([...clearedIds]));
+  }
+  safeSetStorage('grammar_streak_v13', String(currentStreak));
+  updateStageTheme();
+  triggerCutinEffect();
+  populateJumpSelect();
+}
+
+function handleStreakFail() {
+  currentStreak = 0;
+  safeSetStorage('grammar_streak_v13', '0');
+  updateStageTheme();
+}
+
+function renderGrammarTags(q) {
+  const container = document.getElementById('grammarTags');
+  container.innerHTML = '';
+  if (Array.isArray(q.grammar_points)) {
+    q.grammar_points.forEach(pt => {
+      const span = document.createElement('span');
+      span.className = 'grammar-tag';
+      span.textContent = '📌 ' + pt;
+      container.appendChild(span);
+    });
+  }
+}
+
+function proceedToStep(nextStage) {
+  const q = filteredProblems[currentIndex];
+  currentStep = nextStage;
+  isJudged = false;
+  judgeSpamCount = 0;
+  isAnswerShownByCheat = false;
+  if (nextStage === 2) {
+    lockedBunsetsuBreaks = new Set(q.bunsetsuBreaks);
+    userBreaks.clear();
+  } else if (nextStage === 3) {
+    userPosSelections = new Array(q.words.length).fill(null);
+    selectedWordIndex = 0;
+  }
+  document.getElementById('feedbackPanel').className = 'feedback-panel';
+  document.getElementById('nextStep2Btn').style.display = 'none';
+  document.getElementById('nextStep3Btn').style.display = 'none';
+  document.getElementById('nextQInlineBtn').style.display = 'none';
+  document.getElementById('judgeBtn').style.display = 'inline-flex';
+  renderQuestion();
+}
+
+function clearCurrentInput() {
+  const q = filteredProblems[currentIndex];
+  const stage = getActiveStage();
+  isJudged = false;
+  judgeSpamCount = 0;
+  isAnswerShownByCheat = false;
+  document.getElementById('feedbackPanel').className = 'feedback-panel';
+  if (stage === 1 || stage === 2) {
+    userBreaks.clear();
+    updateCounterPill();
+    renderSentenceWorkspace(q, stage === 1 ? 'bunsetsu' : 'tango');
+    renderNesayoPreview(q);
+  } else {
+    userPosSelections = new Array(q.words.length).fill(null);
+    selectedWordIndex = 0;
+    updateCounterPill();
+    renderPosWorkspace(q);
+  }
+}
+
+function showAnswerDirectly() {
+  const q = filteredProblems[currentIndex];
+  const stage = getActiveStage();
+  if (stage === 1) {
+    userBreaks = new Set(q.bunsetsuBreaks);
+    renderSentenceWorkspace(q, 'bunsetsu');
+  } else if (stage === 2) {
+    userBreaks.clear();
+    q.tangoBreaks.forEach(idx => { if (!lockedBunsetsuBreaks.has(idx)) userBreaks.add(idx); });
+    renderSentenceWorkspace(q, 'tango');
+  } else {
+    userPosSelections = q.words.map(w => w.correctPos);
+    renderPosWorkspace(q);
+  }
+  isJudged = true;
+  isAnswerShownByCheat = true;
+  checkAnswerWithoutStreak(q, stage);
+}
+
+function checkAnswerWithoutStreak(q, stage) {
+  const panel = document.getElementById('feedbackPanel');
+  const title = document.getElementById('feedbackTitle');
+  const content = document.getElementById('explanationContent');
+  panel.className = 'feedback-panel show incorrect';
+  title.innerHTML = '📖 解答・解説を表示しました（※「正解を見る」を使用したため連続正解は0になります）';
+  handleStreakFail();
+
+  if (stage === 1 || stage === 2) {
+    document.querySelectorAll('.break-slot').forEach(slot => {
+      const idx = parseInt(slot.dataset.index, 10);
+      const correctIndices = new Set(stage === 1 ? q.bunsetsuBreaks : q.tangoBreaks);
+      if (correctIndices.has(idx)) slot.classList.add('judge-correct');
+    });
+    if (currentMode === 'step' && stage === 1) {
+      document.getElementById('nextStep2Btn').style.display = 'inline-flex';
+    } else if (currentMode === 'step' && stage === 2) {
+      document.getElementById('nextStep3Btn').style.display = 'inline-flex';
+    } else if (currentIndex < filteredProblems.length - 1) {
+      document.getElementById('nextQInlineBtn').style.display = 'inline-flex';
+    }
+    content.innerHTML = stage === 1
+      ? `<div><strong>【文節分けの解説】（正解：${q.bunsetsu_count}文節）</strong> ${q.bunsetsu_explanation}</div>`
+      : `<div><strong>【単語分けの解説】（正解：${q.tango_count}単語）</strong> ${q.tango_explanation}</div>`;
+  } else {
+    renderPosWorkspace(q);
+    if (currentIndex < filteredProblems.length - 1) {
+      document.getElementById('nextQInlineBtn').style.display = 'inline-flex';
+    }
+    const posBreakdown = q.words.map(w => `<strong>${w.surface}</strong>【${w.correctPos}】`).join(' ＋ ');
+    content.innerHTML = `<div><strong>【品詞の内訳】</strong> ${posBreakdown}</div><div style="margin-top:4px;"><strong>【解説】</strong> ${q.pos_explanation}</div>`;
+  }
+  renderGrammarTags(q);
+}
+
+function navigateQuestion(delta) {
+  const nextIdx = currentIndex + delta;
+  if (nextIdx < 0 || nextIdx >= filteredProblems.length) return;
+  currentIndex = nextIdx;
+  resetQuestionState();
+  renderQuestion();
+}
+
+function resetProgress() {
+  if (!confirm('クリア済みの学習履歴および連続正解記録をリセットしますか？')) return;
+  clearedIds.clear();
+  currentStreak = 0;
+  safeRemoveStorage('grammar_cleared_v13');
+  safeRemoveStorage('grammar_streak_v13');
+  updateStageTheme();
+  populateJumpSelect();
+  renderQuestion();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+window.addEventListener('load', initApp);
+</script>
+</body>
+</html>
